@@ -1,0 +1,41 @@
+library(readxl)										# package for reading excel file
+library(XML)										#package for working xm, html files
+library(rlist)										#cleaning the list
+library(stringr)									#working with strings
+library(data.table)									#for binding data frames
+data<-read_excel("Input.xlsx")						#reading the Input file
+data<-as.data.frame(data)							#converting the file to data frame
+data$ID <-1:nrow(data)								#adding column ID's to the file
+data<-data[,c(7,1:6)]								#putting ID at the first column
+data3<-data[0,]										#creating a data frame to store the result
+
+for(j in seq(1:nrow(data)))
+{
+	htm<-data$URL[j]								#reading the URL
+	link<-readLines(htm)
+	tables<- readHTMLTable(link,stringsAsFactors = FALSE)		#taking the tables from web
+	tables <- list.clean(tables, fun = is.null, recursive = FALSE)		#cleaning the table for NULL table
+	l=length(tables)													#finding the no of tables in web
+	if(l==0)
+	next
+	for(i in seq(1:l))
+	{
+	 table<-tables[[i]]
+	 if(any(grepl("Credit Default Swap",table,fixed=TRUE)))			# searching for the key in the table
+	 {
+	 if(table[1,1]!="Credit Default Swap")						# if there is any merged table for example 10th link
+	{
+	table<-table[(match("Credit Default Swap",table[,1])-1):nrow(table),]
+	}
+	 tab<- na.omit(table)										#eleminating Null from table
+	 clean<-gsub("[[:space:]]", " ", tab[2,1])					#cleaning the CDS Text
+	 a<-data.frame("CDS Text"=clean,"Underlying"=NA,"Exact Underlying"=NA,"CounterParty"=NA,"CDS Transaction"=NA)	
+	 a[1,2]<-sub(".*[default|event] of *(.*?) *,.*", "\\1", a[1,1])					#Underlying 
+	 a[1,3]<-sub(".*amount of *(.*?([0-9]{1,2})[/.]([0-9]{1,2})[/.]([0-9]{2})) *.*", "\\1", a[1,1])		#Exact Underlying
+	 a[1,4]<-str_extract(string = a[1,1], pattern = regex("(?<=pay).*(?=upon)"))						#CounterParty
+	 da1<-cbind(data[j,],a)																				# binding the table
+	 data3<-as.data.frame(rbindlist(list(data3, da1), fill = TRUE))
+	 }
+	 }
+}
+write.csv(data3,"Phase2.csv",row.names=FALSE)								#writing the data
