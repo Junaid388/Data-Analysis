@@ -15,7 +15,7 @@ Note:
 
 Text analysis 
 
-Text analysis of CDS Text to parse text and extract i). ii). iii) and iv) as below. Develop patterns and develop regex (regular expressions) to identify and extract following: 
+Text analysis of CDS Text to parse text and extract i). ii).and iii).  as below. Develop patterns and develop regex (regular expressions) to identify and extract following: 
 i) Underlying
 ii) Counterparty
 iii) Exact underlying bond
